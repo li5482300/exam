@@ -1,0 +1,25 @@
+{
+  "name": "室內配線學科考試系統",
+  "short_name": "配線考試",
+  "description": "00700 室內配線─屋內線路裝修 丙級技術士技能檢定學科考試系統",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f4ef",
+  "theme_color": "#185FA5",
+  "orientation": "portrait",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

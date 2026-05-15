@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="配線考試">
+<meta name="theme-color" content="#185FA5">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>室內配線學科考試系統</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: "Microsoft JhengHei", "PingFang TC", "Helvetica Neue", sans-serif; background: #f4f4ef; color: #1a1a1a; min-height: 100vh; font-size: 16px; }
+.container { max-width: 680px; margin: 0 auto; padding: 20px 14px 40px; }
+.hidden { display: none !important; }
+
+/* ── 首頁 ── */
+h1 { font-size: 20px; font-weight: 700; margin-bottom: 3px; line-height: 1.3; }
+.subtitle { font-size: 12px; color: #999; margin-bottom: 22px; line-height: 1.5; }
+.section-title { font-size: 12px; font-weight: 700; color: #888; letter-spacing: .5px; margin: 22px 0 10px; text-transform: uppercase; }
+
+/* 卡片網格：手機單欄，平板雙欄 */
+.card-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 4px; }
+@media (min-width: 480px) { .card-grid { grid-template-columns: 1fr 1fr; } }
+
+.menu-card { border: 1.5px solid #e0e0d8; border-radius: 14px; padding: 16px; cursor: pointer; background: #fff; display: flex; align-items: center; gap: 14px; transition: border-color .15s, background .15s; user-select: none; -webkit-user-select: none; }
+.menu-card:active { background: #f0f6ff; border-color: #185FA5; }
+.menu-card.active { border-color: #185FA5; background: #E6F1FB; }
+.menu-card .icon { font-size: 28px; flex-shrink: 0; }
+.menu-card .mc-title { font-size: 15px; font-weight: 700; line-height: 1.3; }
+.menu-card .mc-desc { font-size: 12px; color: #aaa; margin-top: 3px; }
+.menu-card.active .mc-title { color: #185FA5; }
+.menu-card.active .mc-desc { color: #185FA5; }
+
+/* ── 標籤 ── */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.tag { padding: 8px 16px; border-radius: 22px; border: 1.5px solid #ddd; background: #fff; color: #888; font-size: 14px; cursor: pointer; font-family: inherit; transition: all .15s; user-select: none; }
+.tag:active { opacity: .7; }
+.tag.tw { border-color:#185FA5; background:#E6F1FB; color:#185FA5; font-weight:700; }
+.tag.ts { border-color:#3B6D11; background:#EAF3DE; color:#3B6D11; font-weight:700; }
+.tag.te { border-color:#534AB7; background:#EEEDFE; color:#534AB7; font-weight:700; }
+.tag.tv { border-color:#0F6E56; background:#E1F5EE; color:#0F6E56; font-weight:700; }
+.tag.tn { border-color:#854F0B; background:#FAEEDA; color:#854F0B; font-weight:700; }
+
+/* ── 按鈕 ── */
+.btn-go { width:100%; padding:16px; background:#185FA5; color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:6px; -webkit-appearance:none; }
+.btn-go:active { background:#0e4880; }
+.btn-sec { width:100%; padding:15px; background:#eeeee8; color:#444; border:none; border-radius:12px; font-size:15px; cursor:pointer; font-family:inherit; -webkit-appearance:none; }
+.btn-sec:active { background:#ddddd5; }
+.btn-back { background:none; border:none; cursor:pointer; color:#888; font-size:15px; font-family:inherit; padding:8px 0; display:flex; align-items:center; gap:5px; min-height:44px; }
+.btn-back:active { color:#333; }
+
+/* ── 滑桿 ── */
+.range-row { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.range-row label { font-size:14px; color:#666; white-space:nowrap; }
+input[type=range] { flex:1; accent-color:#185FA5; height:6px; }
+.range-val { font-size:16px; font-weight:700; min-width:30px; text-align:right; }
+
+/* ── 科目列表 ── */
+.subj-list { display:grid; gap:10px; margin-bottom:18px; }
+.subj-item { border:1.5px solid #e0e0d8; border-radius:12px; padding:16px; cursor:pointer; background:#fff; display:flex; justify-content:space-between; align-items:center; min-height:56px; }
+.subj-item:active { background:#f0f6ff; border-color:#185FA5; }
+.subj-name { font-weight:700; font-size:15px; }
+.subj-count { font-size:13px; color:#aaa; }
+
+/* ── 題目頁面 固定底部導航 ── */
+#quiz-screen { padding-bottom: 0; }
+.quiz-body { padding: 16px 14px 0; max-width: 680px; margin: 0 auto; }
+.quiz-footer { position: sticky; bottom: 0; background: #f4f4ef; border-top: 1px solid #e0e0d8; padding: 12px 14px; max-width: 680px; margin: 0 auto; }
+
+.quiz-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding: 0 2px; }
+.q-counter { font-size:14px; color:#888; font-weight:600; }
+.timer { font-size:16px; font-weight:700; color:#185FA5; }
+.timer.urgent { color:#c0392b; }
+.progress-bar { height:6px; background:#e8e8e0; border-radius:4px; margin-bottom:20px; overflow:hidden; }
+.progress-fill { height:100%; background:#185FA5; border-radius:4px; transition:width .3s; }
+.subj-badge { display:inline-block; font-size:12px; font-weight:700; padding:4px 12px; border-radius:14px; margin-bottom:12px; }
+.q-text { font-size:17px; font-weight:700; line-height:1.7; margin-bottom:20px; }
+
+/* ── 選項 ── */
+.opts { display:grid; gap:11px; margin-bottom:4px; }
+.opt { border:2px solid #e0e0d8; border-radius:12px; padding:14px 16px; cursor:pointer; background:#fff; display:flex; align-items:flex-start; gap:12px; transition:border-color .1s, background .1s; user-select:none; min-height:52px; }
+.opt:active:not(.locked) { background:#f0f6ff; border-color:#185FA5; }
+.opt.selected { border-color:#185FA5; background:#E6F1FB; }
+.opt.correct  { border-color:#2e7d32; background:#e8f5e9; }
+.opt.wrong    { border-color:#c62828; background:#ffebee; }
+.opt.locked   { cursor:default; }
+.opt-num { min-width:28px; height:28px; border-radius:14px; background:#e8e8e0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+.opt.selected .opt-num { background:#185FA5; color:#fff; }
+.opt.correct  .opt-num { background:#2e7d32; color:#fff; }
+.opt.wrong    .opt-num { background:#c62828; color:#fff; }
+.opt-text { font-size:15px; line-height:1.55; padding-top:3px; }
+
+/* ── 導航按鈕（底部） ── */
+.nav-row { display:flex; gap:10px; }
+.nav-btn { flex:1; padding:15px 10px; border:2px solid #ddd; border-radius:12px; background:#fff; font-size:15px; cursor:pointer; font-family:inherit; font-weight:600; min-height:52px; }
+.nav-btn:active { background:#f0f0eb; }
+.nav-btn.active-next { background:#185FA5; color:#fff; border-color:#185FA5; }
+.nav-btn.active-next:active { background:#0e4880; }
+.nav-btn.finish { background:#2e7d32; color:#fff; border-color:#2e7d32; font-weight:700; }
+.nav-btn.finish:active { background:#1b5e20; }
+
+/* ── 結果畫面 ── */
+.score-card { border-radius:16px; padding:28px 20px; text-align:center; margin-bottom:20px; }
+.score-card.pass { background:#e8f5e9; border:2px solid #2e7d32; }
+.score-card.fail { background:#ffebee; border:2px solid #c62828; }
+.score-num { font-size:64px; font-weight:700; }
+.score-card.pass .score-num { color:#2e7d32; }
+.score-card.fail .score-num { color:#c62828; }
+.score-lbl { font-size:16px; margin-top:6px; font-weight:600; }
+.score-card.pass .score-lbl { color:#2e7d32; }
+.score-card.fail .score-lbl { color:#c62828; }
+.result-list { display:grid; gap:10px; margin-bottom:16px; }
+.ri { border-radius:12px; padding:14px; }
+.ri.ok { background:#e8f5e9; border:1.5px solid #a5d6a7; }
+.ri.ng { background:#ffebee; border:1.5px solid #ef9a9a; }
+.ri-q { font-size:14px; font-weight:700; color:#333; margin-bottom:8px; line-height:1.55; }
+.ri-ans { font-size:13px; line-height:2; }
+.ans-ok { color:#2e7d32; font-weight:700; }
+.ans-ng { color:#c62828; }
+
+/* ── 閱讀：條列 ── */
+.read-list-wrap { display:grid; gap:14px; }
+.read-item { background:#fff; border:1.5px solid #e0e0d8; border-radius:14px; padding:16px; }
+.read-q { font-size:15px; font-weight:700; line-height:1.65; margin-bottom:12px; color:#1a1a1a; }
+.read-opts { display:grid; gap:6px; }
+.read-opt { font-size:14px; padding:8px 10px; border-radius:9px; display:flex; gap:10px; line-height:1.5; }
+.read-opt.ans-row { background:#e8f5e9; font-weight:700; color:#2e7d32; }
+.read-opt.nor-row { color:#555; }
+.read-num { min-width:22px; font-weight:700; flex-shrink:0; }
+
+/* ── 閱讀：翻牌 ── */
+.flip-card { background:#fff; border:1.5px solid #e0e0d8; border-radius:14px; padding:20px; margin-bottom:16px; }
+.flip-q { font-size:17px; font-weight:700; line-height:1.7; margin-bottom:18px; }
+.flip-opts { display:grid; gap:10px; margin-bottom:16px; }
+.flip-opt { border:2px solid #e0e0d8; border-radius:11px; padding:13px 14px; display:flex; gap:12px; font-size:15px; line-height:1.5; }
+.flip-opt.reveal-ok { border-color:#2e7d32; background:#e8f5e9; color:#2e7d32; font-weight:700; }
+.flip-opt.reveal-ng { border-color:#ddd; background:#fafafa; color:#bbb; }
+.flip-reveal-btn { width:100%; padding:15px; background:#f0f0eb; border:none; border-radius:11px; font-size:15px; cursor:pointer; font-family:inherit; font-weight:700; -webkit-appearance:none; }
+.flip-reveal-btn:active { background:#e0e0d8; }
+.flip-nav { display:flex; gap:10px; margin-top:12px; }
+
+/* ── 閱讀：章節 ── */
+.chapter-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+.ch-tab { padding:9px 16px; border-radius:22px; border:1.5px solid #ddd; background:#fff; font-size:13px; cursor:pointer; font-family:inherit; font-weight:600; min-height:40px; }
+.ch-tab:active { opacity:.7; }
+.ch-tab.active { background:#185FA5; color:#fff; border-color:#185FA5; }
+.ch-qs { display:grid; gap:14px; }
+
+/* ── 閱讀：課本式 ── */
+.textbook-wrap { display:grid; gap:14px; }
+.tb-section { background:#fff; border-radius:14px; border:1.5px solid #e0e0d8; overflow:hidden; }
+.tb-header { padding:16px 16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:56px; }
+.tb-header:active { background:#f5f5f0; }
+.tb-header-left { font-size:15px; font-weight:700; }
+.tb-arrow { font-size:16px; color:#aaa; transition:transform .2s; }
+.tb-arrow.open { transform:rotate(180deg); }
+.tb-body { border-top:1px solid #f0f0eb; padding:16px; display:grid; gap:16px; }
+.tb-q-num { font-size:11px; color:#bbb; font-weight:700; margin-bottom:4px; letter-spacing:.5px; }
+.tb-q-text { font-size:15px; font-weight:700; line-height:1.65; margin-bottom:10px; }
+.tb-opt-row { display:flex; gap:10px; font-size:14px; line-height:1.55; padding:4px 0; }
+.tb-opt-row.tb-ans { color:#2e7d32; font-weight:700; }
+.tb-opt-row.tb-nor { color:#777; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ 首頁 ═══════════════════════════════ -->
+<div class="container" id="home-screen">
+  <h1>室內配線學科考試系統</h1>
+  <p class="subtitle">00700 室內配線─屋內線路裝修 丙級技術士技能檢定</p>
+
+  <div class="section-title">📝 考試模式</div>
+  <div class="card-grid">
+    <div class="menu-card" id="mc-exam80" onclick="pickMode('exam80')">
+      <span class="icon">📋</span>
+      <div><div class="mc-title">模擬正式考試</div><div class="mc-desc">80題・100分鐘</div></div>
+    </div>
+    <div class="menu-card" id="mc-practice" onclick="pickMode('practice')">
+      <span class="icon">🔄</span>
+      <div><div class="mc-title">隨機練習</div><div class="mc-desc">自選題數・即時答案</div></div>
+    </div>
+    <div class="menu-card" id="mc-category" onclick="pickMode('category')">
+      <span class="icon">📚</span>
+      <div><div class="mc-title">分類練習</div><div class="mc-desc">依科目練習</div></div>
+    </div>
+  </div>
+
+  <div class="section-title">📖 閱讀模式</div>
+  <div class="card-grid">
+    <div class="menu-card" id="mc-read-list" onclick="pickMode('read-list')">
+      <span class="icon">📄</span>
+      <div><div class="mc-title">條列閱讀</div><div class="mc-desc">所有題目與答案</div></div>
+    </div>
+    <div class="menu-card" id="mc-read-flip" onclick="pickMode('read-flip')">
+      <span class="icon">🃏</span>
+      <div><div class="mc-title">翻牌閱讀</div><div class="mc-desc">點開才看答案</div></div>
+    </div>
+    <div class="menu-card" id="mc-read-chapter" onclick="pickMode('read-chapter')">
+      <span class="icon">🗂️</span>
+      <div><div class="mc-title">章節閱讀</div><div class="mc-desc">依工作項目分類</div></div>
+    </div>
+    <div class="menu-card" id="mc-read-textbook" onclick="pickMode('read-textbook')">
+      <span class="icon">📘</span>
+      <div><div class="mc-title">課本式閱讀</div><div class="mc-desc">可收折每科題目</div></div>
+    </div>
+  </div>
+
+  <!-- 科目選擇（分類練習） -->
+  <div id="cat-section" class="hidden">
+    <p class="section-title">選擇科目</p>
+    <div class="subj-list">
+      <div class="subj-item" onclick="startCategory('indoor_wiring')"><span class="subj-name">室內配線專業科目</span><span class="subj-count">50 題</span></div>
+      <div class="subj-item" onclick="startCategory('safety')"><span class="subj-name">職業安全衛生</span><span class="subj-count">20 題</span></div>
+      <div class="subj-item" onclick="startCategory('ethics')"><span class="subj-name">工作倫理與職業道德</span><span class="subj-count">15 題</span></div>
+      <div class="subj-item" onclick="startCategory('environment')"><span class="subj-name">環境保護</span><span class="subj-count">20 題</span></div>
+      <div class="subj-item" onclick="startCategory('energy')"><span class="subj-name">節能減碳</span><span class="subj-count">20 題</span></div>
+    </div>
+  </div>
+
+  <!-- 設定（exam80 / practice） -->
+  <div id="setup-section" class="hidden">
+    <p class="section-title">選擇科目（可複選）</p>
+    <div class="tags" id="subject-tags">
+      <button class="tag tw" data-subj="indoor_wiring" onclick="toggleSubj(this)">專業科目</button>
+      <button class="tag ts" data-subj="safety"        onclick="toggleSubj(this)">職業安衛</button>
+      <button class="tag te" data-subj="ethics"        onclick="toggleSubj(this)">工作倫理</button>
+      <button class="tag tv" data-subj="environment"   onclick="toggleSubj(this)">環境保護</button>
+      <button class="tag tn" data-subj="energy"        onclick="toggleSubj(this)">節能減碳</button>
+    </div>
+    <div class="range-row" id="count-row" style="display:none">
+      <label>練習題數</label>
+      <input type="range" id="count-slider" min="5" max="50" step="5" value="20"
+             oninput="document.getElementById('count-val').textContent=this.value">
+      <span class="range-val" id="count-val">20</span>
+    </div>
+    <button class="btn-go" onclick="startExam()">開始考試 →</button>
+  </div>
+
+  <!-- 閱讀科目選擇 -->
+  <div id="read-subj-section" class="hidden">
+    <p class="section-title">選擇科目（可複選）</p>
+    <div class="tags" id="read-subj-tags">
+      <button class="tag tw" data-subj="indoor_wiring" onclick="toggleReadSubj(this)">專業科目</button>
+      <button class="tag ts" data-subj="safety"        onclick="toggleReadSubj(this)">職業安衛</button>
+      <button class="tag te" data-subj="ethics"        onclick="toggleReadSubj(this)">工作倫理</button>
+      <button class="tag tv" data-subj="environment"   onclick="toggleReadSubj(this)">環境保護</button>
+      <button class="tag tn" data-subj="energy"        onclick="toggleReadSubj(this)">節能減碳</button>
+    </div>
+    <button class="btn-go" onclick="startRead()">開始閱讀 →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 考試畫面 ═══════════════════════════════ -->
+<div class="hidden" id="quiz-screen">
+  <div class="quiz-body">
+    <div class="quiz-header">
+      <button class="btn-back" onclick="goHome()">← 返回</button>
+      <span class="q-counter" id="q-counter">1 / 80</span>
+      <span class="timer hidden" id="timer">100:00</span>
+      <button class="btn-back hidden" id="show-score-btn" onclick="showResult()" style="color:#185FA5;font-weight:700;">📊 成績</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="subj-badge" id="subj-badge"></span>
+    <div class="q-text" id="q-text"></div>
+    <div class="opts" id="opts"></div>
+  </div>
+  <div class="quiz-footer">
+    <div class="nav-row">
+      <button class="nav-btn hidden" id="prev-btn" onclick="navigate(-1)">← 上一題</button>
+      <button class="nav-btn" id="next-btn">下一題 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 結果畫面 ═══════════════════════════════ -->
+<div class="container hidden" id="result-screen">
+  <div id="score-card-wrap"></div>
+  <div class="result-list" id="result-list"></div>
+  <div style="display:grid;gap:10px;margin-top:4px">
+    <button class="btn-go" onclick="reviewExam()">📝 返回重新作答</button>
+    <button class="btn-sec" onclick="goHome()">🏠 返回首頁</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 閱讀畫面 ═══════════════════════════════ -->
+<div class="container hidden" id="read-screen">
+  <div class="quiz-header" style="margin-bottom:16px">
+    <button class="btn-back" onclick="goHome()">← 返回</button>
+    <span id="read-screen-title" style="font-size:14px;font-weight:700;color:#555"></span>
+    <span></span>
+  </div>
+  <div id="read-content"></div>
+</div>
+
+<script>
+/* ════════════════ 資料 ════════════════ */
+const SUBJECTS = {
+  indoor_wiring:{ name:"室內配線專業科目", short:"專業", tc:"tw", badge:"background:#E6F1FB;color:#185FA5" },
+  safety:       { name:"職業安全衛生",     short:"安衛", tc:"ts", badge:"background:#EAF3DE;color:#3B6D11" },
+  ethics:       { name:"工作倫理與職業道德",short:"倫理", tc:"te", badge:"background:#EEEDFE;color:#534AB7" },
+  environment:  { name:"環境保護",         short:"環保", tc:"tv", badge:"background:#E1F5EE;color:#0F6E56" },
+  energy:       { name:"節能減碳",         short:"節能", tc:"tn", badge:"background:#FAEEDA;color:#854F0B" },
+};
+const ALL_SUBJS = Object.keys(SUBJECTS);
+const NUMS = ["①","②","③","④"];
+
+const QB = {
+indoor_wiring:[
+  {q:"單相電容器起動型電動機之電容器，下列敘述何者正確？",o:["電容器並接於起動繞組","電容器串接於起動繞組","電容器並接於運轉繞組","電容器串接於運轉繞組"],a:1},
+  {q:"變壓器必須考慮極性之時機為",o:["單相變壓器作屋內使用時","單相變壓器作降壓使用時","單相變壓器作屋外使用時","單相變壓器作三相連接時"],a:3},
+  {q:"低壓電源其電壓在150～600V以內之電容器，其外箱應按何種接地施工？",o:["第一種","特種","第二種","第三種"],a:3},
+  {q:"電動機使用電磁開關作正逆轉控制要有互鎖功能，其主要目的在",o:["防止過載","防止接點接觸不良","防止主電路短路","接線方便"],a:2},
+  {q:"銅是一種",o:["半導體材料","非磁性材料","絕緣材料","磁性材料"],a:1},
+  {q:"單相三線式供電系統中，A相電流為30安，B相電流為25安，A、B相功率因數相同時，則中性線電流為多少安？",o:["30","25","5","55"],a:2},
+  {q:"接地之目的為何？",o:["節省電力","防止絕緣破壞","防止短路","防止感電"],a:3},
+  {q:"超過1公尺以上之金屬導線管所使用導線直徑在多少公厘以上者，應使用絞線？",o:["3.2","2.0","2.6","1.2"],a:0},
+  {q:"電流動作型漏電斷路器係，利用下列何種器具以檢出接地故障電流使斷路器跳脫？",o:["分流器","比壓器","零相比流器","比流器"],a:2},
+  {q:"電動機銘牌上所註明之電流值，係指電動機之",o:["滿載電流","1/2滿載電流","無載電流","半載電流"],a:0},
+  {q:"MCCB係表示",o:["油斷路器","無熔線斷路器","燈用分電盤","隔離開關"],a:1},
+  {q:"無熔線斷路器之AT係表示",o:["負載容量","框架容量","跳脫容量","啟斷容量"],a:2},
+  {q:"無熔線斷路器之AF係表示",o:["負載容量","框架容量","跳脫容量","啟斷容量"],a:1},
+  {q:"電源不變下，將Δ接線之三相電容器改為Y接線，該電容器之電容量(kVAR)為原來之多少倍？",o:["2","1/3","3","1/2"],a:1},
+  {q:"三相四極鼠籠式轉子感應電動機在外加電源頻率60赫(Hz)時，轉速為1710rpm，則轉子導體所感應的電源頻率為多少赫(Hz)？",o:["30","60","3","6"],a:2},
+  {q:"目前市面上所使用之指針型三用電表，其表頭是使用",o:["動圈型","動鐵型","感應型","整流型"],a:0},
+  {q:"僅供應單相二線式分路二路者，其用戶總開關額定值不得低於多少安培？",o:["15","30","20","50"],a:1},
+  {q:"一般低壓PVC絕緣電線之最高容許溫度為多少℃？",o:["50","55","60","65"],a:2},
+  {q:"低壓耐熱PVC絕緣電線之最高容許溫度為多少℃？",o:["60","75","80","90"],a:1},
+  {q:"以七根直徑各為1.2公厘之銅實心導線組合而成之絞線，其公稱截面積相當於多少平方公厘？",o:["5.5","8","14","22"],a:1},
+  {q:"導線直徑為2.6公厘以下之實心線，做分歧連接時，其接頭須綁紮幾圈以上？",o:["2","3","4","5"],a:3},
+  {q:"屋內配線所使用之絞線至少由幾股實心線組成？",o:["1","3","5","7"],a:3},
+  {q:"非金屬導線管可使用於",o:["發散腐蝕性物質處所","有危險物質存在之處所","照明燈具之支撐","易受外力損傷之場所"],a:0},
+  {q:"PVC導線管以明管敷設時，其管與配件連接處多少公分以內應裝置護管帶固定之？",o:["60","50","40","30"],a:3},
+  {q:"明管工程（長度超過6公尺）之非金屬導線管內有3條2.0公厘PVC導線，則此非金屬導線管之最小管徑（內徑）應為多少公厘？",o:["16","20","28","35"],a:0},
+  {q:"EMT管得裝置於下列何種處所？",o:["有危險物質場所","乾燥處所","600伏以上之高壓配管工程","有重機械碰傷之場所"],a:1},
+  {q:"燈用軌道不得裝置於距離地面多少公尺以下？",o:["1","1.5","2","2.5"],a:1},
+  {q:"燈用軌道之銅導體最小應採用多少平方公厘以上？",o:["3.5","5.5","8","14"],a:1},
+  {q:"厚金屬導線管以明管敷設時，距出線盒多少公尺以內應裝護管鐵支持？",o:["0.9","1.5","2.0","2.4"],a:0},
+  {q:"低壓電纜施工後加入系統前要作",o:["絕緣電阻測試","電容試驗","電暈試驗","導線電阻檢查"],a:0},
+  {q:"三相四線式之中性線係屬",o:["非接地導線","被接地導線","接地導線","非識別導線"],a:1},
+  {q:"漏電斷路器之最小動作電流，係額定靈敏度電流多少％以上之電流值？",o:["50","40","30","25"],a:0},
+  {q:"以防止感電事故為目的而裝設之漏電斷路器應採用",o:["高靈敏度高速型","高靈敏度延時型","中靈敏度高速型","中靈敏度延時型"],a:0},
+  {q:"1卡等於多少焦耳？",o:["0.24","4.2","10","1000"],a:1},
+  {q:"低壓變壓器主要用途為",o:["變換電壓","增加電功率","減少頻率","改善功率因數"],a:0},
+  {q:"配電變壓器之二次側低壓線或中性線之接地稱為",o:["設備接地","內線系統接地","低壓電源系統接地","設備與系統共同接地"],a:2},
+  {q:"以防止感電事故為目的裝置漏電斷路器者，其動作時間應為多少秒以內？",o:["0.1","2","5","10"],a:0},
+  {q:"低壓電力電容器之過電流保護額定值應以電容器額定電流之多少倍為原則？",o:["1.25","1.3","1.5","2.5"],a:1},
+  {q:"鉤式電流表主要用於量測",o:["交流電壓","交流電流","直流電壓","直流電流"],a:1},
+  {q:"瓦特表係測量負載之",o:["無效功率","有效功率","視在功率","功率因數"],a:1},
+  {q:"家庭用計算電費的電表是屬於",o:["電壓表","電流表","瓦時計","鉤式電流表"],a:2},
+  {q:"指針型功率因數表之中央標度，其功率因數為",o:["滯後0.5","0","1","超前0.5"],a:2},
+  {q:"感應電動機之起動轉矩與下列何者成正比？",o:["電壓平方","電流","電壓","功率因數"],a:0},
+  {q:"三相感應電動機之轉差率因負載增加而",o:["減少","不變","變大","不一定"],a:2},
+  {q:"一般使用最多的電動機為",o:["同步電動機","直流電動機","感應電動機","推斥電動機"],a:2},
+  {q:"蔽極式電動機之旋轉方向為",o:["自蔽極至主磁極","自主磁極至蔽極","由通電電流方向決定","不一定"],a:1},
+  {q:"某承裝業如僅僱用一名丙級以上之室內配線職類技術士，該承裝業可申請登記為哪一級承裝業？",o:["甲專","甲","乙","丙"],a:3},
+  {q:"刀型開關電壓在250伏以下，額定電流在幾安培以上者，僅可作為隔離開關之用？",o:["50","100","75","150"],a:3},
+  {q:"金屬可撓導線管以明管敷設時，距出線盒多少公分以內應裝設護管鐵固定？",o:["50","20","30","10"],a:2},
+  {q:"負載不變之情況下保險絲燒毀，應換裝",o:["銅絲","安培數較小之保險絲","原規格之保險絲","安培數較大保險絲"],a:2},
+],
+safety:[
+  {q:"對於核計勞工所得有無低於基本工資，下列敘述何者有誤？",o:["僅計入在正常工時內之報酬","應計入加班費","不計入休假日出勤加給之工資","不計入競賽獎金"],a:1},
+  {q:"依職業安全衛生法規定，事業單位勞動場所發生死亡職業災害時，雇主應於多少小時內通報勞動檢查機構？",o:["8","12","24","48"],a:0},
+  {q:"工作場所化學性有害物進入人體最常見路徑為下列何者？",o:["口腔","呼吸道","皮膚","眼睛"],a:1},
+  {q:"電氣設備接地之目的為何？",o:["防止電弧產生","防止短路發生","防止人員感電","防止電阻增加"],a:2},
+  {q:"下列何者非屬電氣之絕緣材料？",o:["空氣","氟氯烷","漂白水","絕緣油"],a:2},
+  {q:"腕道症候群常發生於下列何種作業？",o:["電腦鍵盤作業","潛水作業","堆高機作業","第一種壓力容器作業"],a:0},
+  {q:"安全帽承受巨大外力衝擊後，雖外觀良好，應採下列何種處理方式？",o:["廢棄","繼續使用","送修","油漆保護"],a:0},
+  {q:"我國中央勞工行政主管機關為下列何者？",o:["內政部","勞工保險局","勞動部","經濟部"],a:2},
+  {q:"活線作業勞工應佩戴何種防護手套？",o:["棉紗手套","耐熱手套","絕緣手套","防振手套"],a:2},
+  {q:"進出電梯時應以下列何者為宜？",o:["裡面的人先出，外面的人再進入","外面的人先進去，裡面的人才出來","可同時進出","爭先恐後無妨"],a:0},
+  {q:"對於墜落危險之預防設施，下列敘述何者較為妥適？",o:["在外牆施工架等高處作業應盡量使用繫腰式安全帶","安全帶應確實配掛在低於足下之堅固點","高度2m以上之邊緣開口部分處應圍起警示帶","高度2m以上之開口處應設護欄或安全網"],a:3},
+  {q:"依勞動基準法規定，雇主延長勞工之工作時間連同正常工作時間，每日不得超過多少小時？",o:["10","11","12","15"],a:2},
+  {q:"事業單位僱用勞工多少人以上者，應依勞動基準法規定訂立工作規則？",o:["200人","100人","50人","30人"],a:3},
+  {q:"雇主於臨時用電設備加裝漏電斷路器，可減少下列何種災害發生？",o:["墜落","物體倒塌、崩塌","感電","被撞"],a:2},
+  {q:"使用鑽孔機時，不應使用下列何護具？",o:["耳塞","防塵口罩","棉紗手套","護目鏡"],a:2},
+  {q:"安全門或緊急出口平時應維持何狀態？",o:["門可上鎖但不可封死","保持開門狀態以保持逃生路徑暢通","門應關上但不可上鎖","與一般進出門相同，視各樓層規定可開可關"],a:2},
+  {q:"下列何者非屬電氣災害類型？",o:["電弧灼傷","電氣火災","靜電危害","雷電閃爍"],a:3},
+  {q:"若廢機油引起火災，最不應以下列何者滅火？",o:["厚棉被","砂土","水","乾粉滅火器"],a:2},
+  {q:"預防職業病最根本的措施為何？",o:["實施特殊健康檢查","實施作業環境改善","實施定期健康檢查","實施僱用前體格檢查"],a:1},
+  {q:"防止噪音危害之治本對策為",o:["使用耳塞、耳罩","實施職業安全衛生教育訓練","消除發生源","實施特殊健康檢查"],a:2},
+],
+ethics:[
+  {q:"請問下列何者「不是」個人資料保護法所定義的個人資料？",o:["身分證號碼","最高學歷","綽號","護照號碼"],a:2},
+  {q:"有關專利權的敘述，何者正確？",o:["專利有規定保護年限，專利保護年限屆滿，任何人皆可運用該項專利","我發明了某項商品，卻被他人率先申請專利權，我仍可主張擁有這項商品的專利權","專利權可涵蓋、保護抽象的概念性商品","專利權為世界所共有，不需向他國申請專利權"],a:0},
+  {q:"發明專利權是否有保護期限？期限為何？",o:["有，5年","有，20年","有，50年","無期限，只要申請後就永久歸申請人所有"],a:1},
+  {q:"公司負責人為了要節省開銷，將員工薪資以高報低來投保全民健保及勞保，是觸犯了刑法上之何種罪刑？",o:["背信罪","侵占罪","工商秘密罪","詐欺罪"],a:3},
+  {q:"受僱人於職務上所完成之著作，如果沒有特別以契約約定，其著作人為下列何者？",o:["雇用人","受僱人","雇用公司或機關法人代表","由雇用人指定之自然人或法人"],a:1},
+  {q:"故意侵害他人之營業秘密，法院因被害人之請求，最高得酌定損害額幾倍之賠償？",o:["1倍","2倍","3倍","4倍"],a:2},
+  {q:"身為專業技術工作人士，應以何種認知及態度服務客戶？",o:["若客戶不瞭解，就儘量減少成本支出，抬高報價","遇到維修問題，儘量拖過保固期","主動告知可能碰到問題及預防方法","隨著個人心情來提供服務的內容及品質"],a:2},
+  {q:"從事專業性工作，在與客戶約定時間應",o:["保持彈性，任意調整","儘可能準時，依約定時間完成工作","能拖就拖，能改就改","自己方便就好，不必理會客戶的要求"],a:1},
+  {q:"下列何者符合專業人員的職業道德？",o:["未經雇主同意，於上班時間從事私人事務","利用雇主的機具設備私自接單生產","未經顧客同意，任意散佈或利用顧客資料","盡力維護雇主及客戶的權益"],a:3},
+  {q:"與公務機關有業務往來構成職務利害關係者，下列敘述何者「正確」？",o:["高級茶葉低價售予有利害關係之承辦公務員，有價購行為就不算違反法規","與公務機關承辦人飲宴應酬為增進基本關係的必要方法","將餽贈之財物請公務員父母代轉，該公務員亦已違反規定","機關公務員藉子女婚宴廣邀業務往來廠商之行為，並無不妥"],a:2},
+  {q:"下列有關貪腐的敘述何者錯誤？",o:["貪腐會危害永續發展和法治","貪腐會破壞民主體制及價值觀","貪腐會破壞倫理道德與正義","貪腐有助降低企業的經營成本"],a:3},
+  {q:"下列何者「不」屬於職業素養的範疇？",o:["獲利能力","正確的職業價值觀","職業知識技能","良好的職業行為習慣"],a:0},
+  {q:"公司的車子，假日又沒人使用，你是鑰匙保管者，請問假日可以開出去嗎？",o:["可以，只要付費加油即可","可以，反正假日不影響公務","不可以，因為是公司的，並非私人擁有","不可以，應該是讓公司想要使用的員工，輪流使用才可"],a:2},
+  {q:"下列關於營業秘密的敘述，何者不正確？",o:["受雇人於非職務上研究或開發之營業秘密，仍歸雇用人所有","營業秘密不得為質權及強制執行之標的","營業秘密所有人得授權他人使用其營業秘密","營業秘密得全部或部分讓與他人或與他人共有"],a:0},
+  {q:"受雇者因承辦業務而知悉營業秘密，在離職後對於該營業秘密的處理方式，下列敘述何者正確？",o:["聘雇關係解除後便不再負有保障營業秘密之責","僅能自用而不得販售獲取利益","自離職日起3年後便不再負有保障營業秘密之責","離職後仍不得洩漏該營業秘密"],a:3},
+],
+environment:[
+  {q:"世界環境日是在每一年的那一日？",o:["6月5日","4月10日","3月8日","11月12日"],a:0},
+  {q:"2015年巴黎協議之目的為何？",o:["避免臭氧層破壞","減少持久性污染物排放","遏阻全球暖化趨勢","生物多樣性保育"],a:2},
+  {q:"下列何者為環境保護的正確作為？",o:["多吃肉少蔬食","自己開車不共乘","鐵馬步行","不隨手關燈"],a:2},
+  {q:"「酸雨」定義為雨水酸鹼值達多少以下時稱之？",o:["5.0","6.0","7.0","8.0"],a:0},
+  {q:"大氣層中臭氧層有何作用？",o:["保持溫度","對流最旺盛的區域","吸收紫外線","造成光害"],a:2},
+  {q:"下列何者不是噪音的危害所造成的現象？",o:["精神很集中","煩躁、失眠","緊張、焦慮","工作效率低落"],a:0},
+  {q:"下列何種行為無法減少「溫室氣體」排放？",o:["騎自行車取代開車","多搭乘公共運輸系統","多吃肉少蔬菜","使用再生紙張"],a:2},
+  {q:"下列何者不是造成全球暖化的元凶？",o:["汽機車排放的廢氣","工廠所排放的廢氣","火力發電廠所排放的廢氣","種植樹木"],a:3},
+  {q:"室內裝潢時，若不謹慎選擇建材，其中會刺激皮膚、眼、鼻和呼吸道，也是致癌物質，可能為下列哪一種污染物？",o:["臭氧","甲醛","氟氯碳化合物","二氧化碳"],a:1},
+  {q:"台灣西部海岸曾發生的綠牡蠣事件是與下列何種物質污染水體有關？",o:["汞","銅","磷","鎘"],a:1},
+  {q:"可藉由下列何者改善河川水質且兼具提供動植物良好棲地環境？",o:["運動公園","人工溼地","滯洪池","水庫"],a:1},
+  {q:"利用垃圾焚化廠處理垃圾的最主要優點為何？",o:["減少處理後的垃圾體積","去除垃圾中所有毒物","減少空氣污染","減少處理垃圾的程序"],a:0},
+  {q:"日光燈管、水銀溫度計等，因含有哪一種重金屬，可能對清潔隊員造成傷害，應與一般垃圾分開處理？",o:["鉛","鎘","汞","鐵"],a:2},
+  {q:"臺灣嘉南沿海一帶發生的烏腳病可能為哪一種重金屬引起？",o:["汞","砷","鉛","鎘"],a:1},
+  {q:"生活中經常使用的物品，下列何者含有破壞臭氧層的化學物質？",o:["噴霧劑","免洗筷","保麗龍","寶特瓶"],a:0},
+  {q:"冰箱在廢棄回收時應特別注意哪一項物質，以避免逸散至大氣中造成臭氧層的破壞？",o:["冷媒","甲醛","汞","苯"],a:0},
+  {q:"在五金行買來的強力膠中，主要有下列哪一種會對人體產生危害的化學物質？",o:["甲苯","乙苯","甲醛","乙醛"],a:0},
+  {q:"目前市面清潔劑均會強調「無磷」，含磷的清潔劑使用後廢水排至河川或湖泊等水域會造成甚麼影響？",o:["綠牡蠣","優養化","秘雕魚","烏腳病"],a:1},
+  {q:"醫療院所用過的棉球、紗布、針筒、針頭等感染性事業廢棄物屬於",o:["一般事業廢棄物","資源回收物","一般廢棄物","有害事業廢棄物"],a:3},
+  {q:"「分3類，好OK」，是指家戶日常生活中產生的垃圾可以區分哪三類？",o:["資源、廚餘、事業廢棄物","資源、一般廢棄物、事業廢棄物","一般廢棄物、事業廢棄物、放射性廢棄物","資源、廚餘、一般垃圾"],a:3},
+],
+energy:[
+  {q:"依能源局「指定能源用戶應遵行之節約能源規定」，下列何場所未在其管制之範圍？",o:["旅館","餐廳","住家","美容美髮店"],a:2},
+  {q:"基於節能減碳的目標，下列何種光源發光效率最低，不鼓勵使用？",o:["白熾燈泡","LED燈泡","省電燈泡","螢光燈管"],a:0},
+  {q:"下列何者燈泡發光效率最高？",o:["LED燈泡","省電燈泡","白熾燈泡","鹵素燈泡"],a:0},
+  {q:"國家溫室氣體長期減量目標為中華民國139年溫室氣體排放量降為中華民國94年溫室氣體排放量百分之多少以下？",o:["20","30","40","50"],a:3},
+  {q:"台灣電力公司所謂的離峰用電時段為何？",o:["22：30~07：30","22：00~07：00","23：00~08：00","23：30~08：30"],a:0},
+  {q:"全球暖化潛勢(GWP)是衡量溫室氣體對全球暖化的影響，其中是以何者為比較基準？",o:["CO2","CH4","SF6","N2O"],a:0},
+  {q:"電冰箱放置處，四周應至少預留離牆多少公分之散熱空間，以達省電效果？",o:["5","10","15","20"],a:1},
+  {q:"家庭用電最大宗來自於",o:["空調及照明","電腦","電視","吹風機"],a:0},
+  {q:"下列何種熱水器所需能源費用最少？",o:["電熱水器","天然瓦斯熱水器","柴油鍋爐熱水器","熱泵熱水器"],a:3},
+  {q:"台灣電力公司電價表所指的夏月用電月份(電價比其他月份高)是為",o:["4/1~7/31","5/1~8/31","6/1~9/30","7/1~10/31"],a:2},
+  {q:"為了節能與降低電費的需求，家電產品的正確選用應該如何？",o:["選用高功率的產品效率較高","優先選用取得節能標章的產品","設備沒有壞，堪用，繼續用，不會增加支出","選用能效分級數字較高的產品，5級的比1級的電器產品更省電"],a:1},
+  {q:"下列哪一項的能源效率標示級數較省電？",o:["1","2","3","4"],a:0},
+  {q:"用電熱爐煮火鍋，採用中溫50%加熱比用高溫100%加熱，將同一鍋水煮開，下列何者是對的？",o:["中溫50%加熱比較省電","高溫100%加熱比較省電","中溫50%加熱，電流反而比較大","兩種方式用電量是一樣的"],a:3},
+  {q:"若發生瓦斯外洩之情形，下列處理方法何者錯誤？",o:["應先關閉瓦斯爐或熱水器等開關","緩慢地打開門窗，讓瓦斯自然飄散","開啟電風扇，加強空氣流動","在漏氣止住前，應保持警戒，嚴禁煙火"],a:2},
+  {q:"有關觸電的處理方式，下列敘述何者錯誤？",o:["立即將觸電者拉離現場","把電源開關關閉","通知救護人員","使用絕緣的裝備來移除電源"],a:0},
+  {q:"下列何者不是潔淨能源？",o:["風能","地熱","太陽能","頁岩氣"],a:3},
+  {q:"有關延長線及電線的使用，下列敘述何者錯誤？",o:["拔下延長線插頭時，應手握插頭取下","使用中之延長線如有異味產生，屬正常現象不須理會","應避開火源，以免外覆塑膠熔解，致使用時造成短路","使用老舊之延長線，容易造成短路、漏電或觸電等危險情形，應立即更換"],a:1},
+  {q:"一般桶裝瓦斯(液化石油氣)主要成分為",o:["丙烷","甲烷","辛烷","乙炔"],a:0},
+  {q:"有關再生能源的使用限制，下列何者敘述有誤？",o:["風力、太陽能屬間歇性能源，供應不穩定","不易受天氣影響","需較大的土地面積","設置成本較高"],a:1},
+  {q:"電源插座堆積灰塵可能引起電氣意外火災，維護保養時的正確做法是？",o:["可以先用刷子刷去積塵","直接用吹風機吹開灰塵就可以了","應先關閉電源總開關箱內控制該插座的分路開關","可以用金屬接點清潔劑噴在插座中去除銹蝕"],a:2},
+],
+};
+
+/* ════════════════ 狀態 ════════════════ */
+let currentMode = null;
+let selectedSubjs = [...ALL_SUBJS];
+let readSubjs    = [...ALL_SUBJS];
+let questions=[], current=0, answers={}, revealed={};
+let timerInterval=null, timeLeft=0;
+let flipCur=0, flipRevealed=false;
+
+/* ════════════════ 工具 ════════════════ */
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function badgeHtml(s){ return `<span class="subj-badge" style="${SUBJECTS[s].badge};font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;">${SUBJECTS[s].short}</span>`; }
+function show(id){ document.getElementById(id).classList.remove('hidden'); }
+function hide(id){ document.getElementById(id).classList.add('hidden'); }
+function hideAll(){ ['home-screen','quiz-screen','result-screen','read-screen'].forEach(hide); }
+
+/* ════════════════ 首頁邏輯 ════════════════ */
+function pickMode(m){
+  currentMode=m;
+  document.querySelectorAll('.menu-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('mc-'+m).classList.add('active');
+  hide('cat-section'); hide('setup-section'); hide('read-subj-section');
+  if(m==='category'){ show('cat-section'); }
+  else if(m==='exam80'||m==='practice'){
+    show('setup-section');
+    document.getElementById('count-row').style.display = m==='practice'?'flex':'none';
+  } else {
+    show('read-subj-section');
+  }
+}
+function toggleSubj(btn){
+  const s=btn.dataset.subj, idx=selectedSubjs.indexOf(s);
+  if(idx>=0){ if(selectedSubjs.length>1){ selectedSubjs.splice(idx,1); btn.className='tag'; } }
+  else{ selectedSubjs.push(s); btn.className='tag '+SUBJECTS[s].tc; }
+}
+function toggleReadSubj(btn){
+  const s=btn.dataset.subj, idx=readSubjs.indexOf(s);
+  if(idx>=0){ if(readSubjs.length>1){ readSubjs.splice(idx,1); btn.className='tag'; } }
+  else{ readSubjs.push(s); btn.className='tag '+SUBJECTS[s].tc; }
+}
+
+/* ════════════════ 考試邏輯 ════════════════ */
+function buildQuestions(subjs, count){
+  let pool=[];
+  subjs.forEach(s=>{ (QB[s]||[]).forEach((q,i)=>pool.push({...q,subj:s,id:s+'_'+i})); });
+  return shuffle(pool).slice(0,Math.min(count,pool.length));
+}
+function startExam(){
+  const count = currentMode==='exam80'?80:parseInt(document.getElementById('count-slider').value);
+  questions=buildQuestions(selectedSubjs,count);
+  current=0; answers={}; revealed={}; examDone=false;
+  document.getElementById('show-score-btn').classList.add('hidden');
+  if(currentMode==='exam80'){ timeLeft=6000; startTimer(); }
+  hideAll(); show('quiz-screen'); renderQ();
+}
+function startCategory(subj){
+  questions=shuffle(QB[subj]||[]).map((q,i)=>({...q,subj,id:subj+'_'+i}));
+  current=0; answers={}; revealed={};
+  currentMode='category';
+  hideAll(); show('quiz-screen'); renderQ();
+}
+function startTimer(){
+  clearInterval(timerInterval);
+  const el=document.getElementById('timer'); el.classList.remove('hidden');
+  timerInterval=setInterval(()=>{
+    timeLeft--;
+    const m=Math.floor(timeLeft/60),s=timeLeft%60;
+    el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    if(timeLeft<300) el.classList.add('urgent');
+    if(timeLeft<=0){ clearInterval(timerInterval); finishExam(); }
+  },1000);
+}
+let examDone = false;  // 是否已交卷
+function renderQ(){
+  const q=questions[current]; if(!q) return;
+  const ua=answers[q.id], isRev=revealed[q.id];
+  const isPrac=currentMode==='practice'||currentMode==='category';
+  // 模擬考試交卷後：顯示對錯但不鎖住，可重新作答
+  const isExamReview = currentMode==='exam80' && examDone;
+  document.getElementById('q-counter').textContent=(current+1)+' / '+questions.length;
+  document.getElementById('progress-fill').style.width=((current+1)/questions.length*100)+'%';
+  document.getElementById('subj-badge').textContent=SUBJECTS[q.subj].name;
+  document.getElementById('subj-badge').setAttribute('style',SUBJECTS[q.subj].badge+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;');
+  document.getElementById('q-text').textContent=(current+1)+'. '+q.q;
+  const optsEl=document.getElementById('opts'); optsEl.innerHTML='';
+  q.o.forEach((opt,i)=>{
+    let cls='opt';
+    if(isExamReview){
+      // 交卷後顯示對錯，不加 locked，可重選
+      if(i===q.a) cls+=' correct';
+      else if(ua===i) cls+=' wrong';
+    } else if(isRev){
+      if(i===q.a) cls+=' correct locked';
+      else if(ua===i) cls+=' wrong locked';
+      else cls+=' locked';
+    } else if(ua===i) cls+=' selected';
+    const d=document.createElement('div'); d.className=cls;
+    d.innerHTML=`<span class="opt-num">${NUMS[i]}</span><span class="opt-text">${opt}</span>`;
+    // 交卷後或練習模式均可點選（交卷後允許重新作答）
+    if(!isRev || isExamReview) d.onclick=()=>pickAns(q.id,i,q.a,isPrac,isExamReview);
+    optsEl.appendChild(d);
+  });
+  const pb=document.getElementById('prev-btn'), nb=document.getElementById('next-btn');
+  pb.classList.toggle('hidden',current===0);
+  if(isExamReview){
+    // 交卷後返回作答模式：最後一題顯示「再次查看成績」
+    if(current===questions.length-1){
+      nb.textContent='📊 查看成績'; nb.className='nav-btn finish'; nb.onclick=showResult; nb.style.cssText='';
+    } else {
+      nb.textContent='下一題 →'; nb.className='nav-btn active-next'; nb.style.cssText='';
+      nb.onclick=()=>navigate(1);
+    }
+  } else if(current===questions.length-1){
+    nb.textContent='✓ 交卷查看結果'; nb.className='nav-btn finish'; nb.onclick=finishExam; nb.style.cssText='';
+  } else {
+    nb.textContent='下一題 →';
+    const can=isPrac||ua!==undefined;
+    nb.className='nav-btn'+(can?' active-next':'');
+    nb.onclick=can?()=>navigate(1):null;
+    nb.style.cursor=can?'pointer':'not-allowed'; nb.style.opacity=can?'1':'0.5';
+  }
+}
+function pickAns(qid,i,correct,reveal,isReview){
+  if(!isReview && answers[qid]!==undefined) return; // 正常模式只能選一次
+  answers[qid]=i; if(reveal) revealed[qid]=true; renderQ();
+}
+function navigate(dir){ current+=dir; current=Math.max(0,Math.min(questions.length-1,current)); renderQ(); }
+function finishExam(){
+  clearInterval(timerInterval);
+  examDone = true;
+  showResult();
+}
+function showResult(){
+  let correct=0; questions.forEach(q=>{ if(answers[q.id]===q.a) correct++; });
+  const pct=Math.round(correct/questions.length*100), pass=pct>=60;
+  hideAll(); show('result-screen');
+  document.getElementById('score-card-wrap').innerHTML=`<div class="score-card ${pass?'pass':'fail'}"><div class="score-num">${pct}分</div><div class="score-lbl">${pass?'✓ 通過':'✗ 未通過'} — ${correct}/${questions.length} 題正確</div></div>`;
+  const rl=document.getElementById('result-list'); rl.innerHTML='';
+  questions.forEach((q,i)=>{
+    const ua=answers[q.id], ok=ua===q.a;
+    const d=document.createElement('div'); d.className='ri '+(ok?'ok':'ng');
+    let ah=''; if(!ok&&ua!==undefined) ah+=`<div class="ans-ng">✗ 你的答案：${NUMS[ua]} ${q.o[ua]}</div>`;
+    ah+=`<div class="ans-ok">✓ 正確答案：${NUMS[q.a]} ${q.o[q.a]}</div>`;
+    d.innerHTML=`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:7px">${badgeHtml(q.subj)}<span class="ri-q">${i+1}. ${q.q}</span></div><div class="ri-ans">${ah}</div>`;
+    rl.appendChild(d);
+  });
+}
+function reviewExam(){
+  // 返回題目畫面，保留答案，可重新作答，顯示對錯提示
+  current=0;
+  hideAll(); show('quiz-screen');
+  document.getElementById('show-score-btn').classList.remove('hidden');
+  document.getElementById('timer').classList.add('hidden');
+  renderQ();
+}
+
+/* ════════════════ 閱讀模式 ════════════════ */
+function startRead(){
+  hideAll(); show('read-screen');
+  const titles={'read-list':'📄 條列閱讀','read-flip':'🃏 翻牌閱讀','read-chapter':'🗂️ 章節閱讀','read-textbook':'📘 課本式閱讀'};
+  document.getElementById('read-screen-title').textContent = titles[currentMode]||'';
+  const rc=document.getElementById('read-content'); rc.innerHTML='';
+
+  const pool=[];
+  readSubjs.forEach(s=>{ (QB[s]||[]).forEach((q,i)=>pool.push({...q,subj:s,idx:i})); });
+
+  if(currentMode==='read-list') renderReadList(rc, pool);
+  else if(currentMode==='read-flip') renderReadFlip(rc, pool);
+  else if(currentMode==='read-chapter') renderReadChapter(rc);
+  else if(currentMode==='read-textbook') renderReadTextbook(rc);
+}
+
+/* ── 條列閱讀 ── */
+function renderReadList(rc, pool){
+  const wrap=document.createElement('div'); wrap.className='read-list-wrap';
+  pool.forEach((q,gi)=>{
+    const d=document.createElement('div'); d.className='read-item';
+    let oh='';
+    q.o.forEach((opt,i)=>{
+      const isAns=i===q.a;
+      oh+=`<div class="read-opt ${isAns?'ans-row':'nor-row'}"><span class="read-num">${NUMS[i]}</span><span>${opt}${isAns?' ✓':''}</span></div>`;
+    });
+    d.innerHTML=`${badgeHtml(q.subj)}<div class="read-q" style="margin-top:8px">${gi+1}. ${q.q}</div><div class="read-opts">${oh}</div>`;
+    wrap.appendChild(d);
+  });
+  rc.appendChild(wrap);
+}
+
+/* ── 翻牌閱讀 ── */
+let flipPool=[], flipIdx=0;
+function renderReadFlip(rc, pool){
+  flipPool=pool; flipIdx=0; renderFlipCard(rc);
+}
+function renderFlipCard(rc){
+  rc.innerHTML='';
+  if(flipPool.length===0){ rc.innerHTML='<p style="color:#888;text-align:center;padding:40px">無題目</p>'; return; }
+  const q=flipPool[flipIdx];
+  const card=document.createElement('div'); card.className='flip-card';
+  let oh='';
+  q.o.forEach((opt,i)=>{ oh+=`<div class="flip-opt" id="fopt-${i}"><span style="min-width:20px;font-weight:700">${NUMS[i]}</span><span>${opt}</span></div>`; });
+  card.innerHTML=`
+    ${badgeHtml(q.subj)}
+    <div class="flip-q" style="margin-top:8px">${flipIdx+1} / ${flipPool.length}．${q.q}</div>
+    <div class="flip-opts">${oh}</div>
+    <button class="flip-reveal-btn" id="flip-reveal-btn" onclick="doFlipReveal(${q.a})">👁 點擊顯示答案</button>`;
+  const nav=document.createElement('div'); nav.className='flip-nav';
+  if(flipIdx>0){
+    const pb=document.createElement('button'); pb.className='nav-btn'; pb.textContent='← 上一題';
+    pb.onclick=()=>{ flipIdx--; renderFlipCard(rc); }; nav.appendChild(pb);
+  }
+  if(flipIdx<flipPool.length-1){
+    const nb=document.createElement('button'); nb.className='nav-btn active-next'; nb.textContent='下一題 →';
+    nb.onclick=()=>{ flipIdx++; renderFlipCard(rc); }; nav.appendChild(nb);
+  }
+  rc.appendChild(card); rc.appendChild(nav);
+}
+function doFlipReveal(ans){
+  document.getElementById('flip-reveal-btn').style.display='none';
+  for(let i=0;i<4;i++){
+    const el=document.getElementById('fopt-'+i);
+    if(el) el.className='flip-opt '+(i===ans?'reveal-ok':'reveal-ng');
+  }
+}
+
+/* ── 章節閱讀 ── */
+function renderReadChapter(rc){
+  const tabs=document.createElement('div'); tabs.className='chapter-tabs';
+  readSubjs.forEach((s,idx)=>{
+    const btn=document.createElement('button'); btn.className='ch-tab'+(idx===0?' active':'');
+    btn.textContent=SUBJECTS[s].name; btn.dataset.subj=s;
+    btn.onclick=()=>{
+      document.querySelectorAll('.ch-tab').forEach(t=>t.classList.remove('active'));
+      btn.classList.add('active'); renderChapterBody(qBody, s);
+    };
+    tabs.appendChild(btn);
+  });
+  const qBody=document.createElement('div'); qBody.className='ch-qs';
+  rc.appendChild(tabs); rc.appendChild(qBody);
+  if(readSubjs.length>0) renderChapterBody(qBody, readSubjs[0]);
+}
+function renderChapterBody(container, subj){
+  container.innerHTML='';
+  (QB[subj]||[]).forEach((q,i)=>{
+    const d=document.createElement('div'); d.className='read-item';
+    let oh='';
+    q.o.forEach((opt,j)=>{
+      const isAns=j===q.a;
+      oh+=`<div class="read-opt ${isAns?'ans-row':'nor-row'}"><span class="read-num">${NUMS[j]}</span><span>${opt}${isAns?' ✓':''}</span></div>`;
+    });
+    d.innerHTML=`<div class="read-q">${i+1}. ${q.q}</div><div class="read-opts">${oh}</div>`;
+    container.appendChild(d);
+  });
+}
+
+/* ── 課本式閱讀 ── */
+function renderReadTextbook(rc){
+  const wrap=document.createElement('div'); wrap.className='textbook-wrap';
+  readSubjs.forEach(s=>{
+    const sec=document.createElement('div'); sec.className='tb-section';
+    const hdr=document.createElement('div'); hdr.className='tb-header';
+    hdr.innerHTML=`<span class="tb-header-left">${SUBJECTS[s].name} <span style="font-size:12px;color:#999;font-weight:400">${QB[s].length} 題</span></span><span class="tb-arrow" id="arr-${s}">▼</span>`;
+    const body=document.createElement('div'); body.className='tb-body'; body.id='tb-body-'+s; body.style.display='none';
+    (QB[s]||[]).forEach((q,i)=>{
+      const qd=document.createElement('div');
+      let oh='';
+      q.o.forEach((opt,j)=>{
+        oh+=`<div class="tb-opt-row ${j===q.a?'tb-ans':'tb-nor'}"><span style="min-width:20px;font-weight:700">${NUMS[j]}</span><span>${opt}${j===q.a?' ✓':''}</span></div>`;
+      });
+      qd.innerHTML=`<div class="tb-q-num">第 ${i+1} 題</div><div class="tb-q-text">${q.q}</div>${oh}`;
+      body.appendChild(qd);
+    });
+    hdr.onclick=()=>{
+      const open=body.style.display!=='none';
+      body.style.display=open?'none':'grid';
+      document.getElementById('arr-'+s).classList.toggle('open',!open);
+    };
+    sec.appendChild(hdr); sec.appendChild(body); wrap.appendChild(sec);
+  });
+  rc.appendChild(wrap);
+}
+
+/* ════════════════ 返回首頁 ════════════════ */
+function goHome(){
+  clearInterval(timerInterval);
+  hideAll(); show('home-screen');
+  document.getElementById('timer').classList.add('hidden');
+  document.getElementById('timer').classList.remove('urgent');
+  hide('cat-section'); hide('setup-section'); hide('read-subj-section');
+  document.querySelectorAll('.menu-card').forEach(c=>c.classList.remove('active'));
+  currentMode=null;
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('SW 已註冊，離線模式啟動'))
+      .catch(e => console.log('SW 註冊失敗:', e));
+  });
+}
+</script>
+</body>
+</html>
